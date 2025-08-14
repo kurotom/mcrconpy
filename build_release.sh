@@ -7,7 +7,7 @@
 #
 # YAML_FILE='.github/workflows/build.yml'
 PYPROJECT_TOML=$(realpath 'pyproject.toml')
-VERSION=$(realpath 'getpycomic/version.py')
+VERSION=$(realpath 'mcrconpy/version.py')
 STATUS=0
 
 
