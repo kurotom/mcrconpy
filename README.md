@@ -16,7 +16,7 @@ You can log the activity or commands executed by the user in JSONL file format, 
 
 To enable the RCON protocol on your server, you must modify the following lines in the **server.properties** file and open the designated port:
 
-```
+```text
 enable-rcon=true
 rcon.password=<your password>
 rcon.port=<1-65535>
@@ -33,7 +33,7 @@ $ pip install mcrconpy
 
 # CLI
 
-```bash
+```text
 $ mcrconpy --help
 usage: mcrconpy [-h] -a ADDRESS [-p PORT] -P PASSWORD [-A]
 
