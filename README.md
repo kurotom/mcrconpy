@@ -2,7 +2,7 @@
 
 Client to use the RCON protocol to execute commands on a Minecraft Java server.
 
-> ![IMPORTANT]
+> [!IMPORTANT]
 > The RCON protocol transmits data in plain text, without encryption, so it is necessary to use an SSH tunnel or VPN if communication is carried out over the Internet.
 >
 > Python 3.9+.
