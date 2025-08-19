@@ -11,6 +11,14 @@ from mcrconpy.audit import Audit
 from mcrconpy.models import User
 
 
+from mcrconpy.exceptions import (
+    ServerTimeOut,
+    ServerError,
+    ServerAuthError,
+    SocketConnectionError,
+
+)
+
 from typing import (
     Union
 )
@@ -50,9 +58,7 @@ class RconPy:
         """
         return self.user.set_password(password)
 
-    def get_password(
-        self,
-    ) -> Union[str, None]:
+    def get_password(self) -> Union[str, None]:
         """
         Gets the password of the rcon user.
 
@@ -77,8 +83,8 @@ class RconPy:
         """
         try:
             self.conn.connect(address=self.address, port=self.port)
-        except Exception as e:
-            print(">", e)
+        except (ServerTimeOut, ServerError) as e:
+            print(">XXXX", e)
             return
 
     def login(
@@ -108,9 +114,7 @@ class RconPy:
                 self.user.active_session()
                 return True
 
-            return False
-
-        except Exception as e:
+        except (ServerAuthError, SocketConnectionError) as e:
             print(">", e)
             self.user.is_login = False
             return False
@@ -160,13 +164,11 @@ class RconPy:
         """
         if self.conn.is_connected():
             res = self.conn.send(data)
+            # print(res, data)
             return res
         return b''
 
-    def read(
-        self,
-        length: int = 1024
-    ) -> tuple:
+    def read(self) -> tuple:
         """
         Reads the response data from the server.
 
@@ -176,7 +178,7 @@ class RconPy:
         Returns
             bytes: data from the server.
         """
-        data = self.conn.read(length)
+        data = self.conn.read()
         length, id, packet_type, body = Packet.decode(data)
         return (length, id, packet_type, body)
 

@@ -14,6 +14,11 @@ Packet:
     * '\x00\x00' (2 bits)  - end of packet.
 """
 
+from mcrconpy.exceptions import (
+    ErrorParameter
+)
+
+
 
 from typing import Union
 
@@ -33,7 +38,7 @@ class Packet:
     def build(
         req_id: int,
         packet_type: int,
-        data: str,
+        data: Union[str, bytes],
     ) -> Union[bytes, None]:
         """
         Prepares the data and creates the packet to send to the server.
@@ -48,17 +53,28 @@ class Packet:
             None: if `req_id` and `packet_type` are not `int` and `data` is
                   not `str`.
         """
-        checks = [
-            isinstance(req_id, int),
-            isinstance(packet_type, int),
-            isinstance(data, str),
-        ]
-        if not all(checks):
-            return None
+        if not isinstance(req_id, int) and req_id >= 0:
+            raise ErrorParameter("`req_id` must be positive integer.")
+        if not isinstance(packet_type, int):
+            raise ErrorParameter("`packet_type` must be integer.")
+        if not isinstance(data, (str, bytes)):
+            raise ErrorParameter("`data` must be string or bytes.")
 
-        req_id_bytes = req_id.to_bytes(4, byteorder="little")
-        packet_type_bytes = packet_type.to_bytes(4, byteorder="little")
-        body_bytes = data.encode("ascii")
+        req_id_bytes = req_id.to_bytes(
+                                    4,
+                                    byteorder="little",
+                                    signed=True
+                                )
+        packet_type_bytes = packet_type.to_bytes(
+                                            4,
+                                            byteorder="little",
+                                            signed=True
+                                        )
+
+        if hasattr(data, "encode"):
+            body_bytes = data.encode("ascii")
+        else:
+            body_bytes = data
 
         packet = req_id_bytes + packet_type_bytes + body_bytes + Packet.END
 
@@ -93,17 +109,10 @@ class Packet:
         if not isinstance(data, bytes):
             return ()
 
-        end_body = len(data) - 2
-
-        body = data[12:end_body]
-
         length = int.from_bytes(data[0:4], byteorder="little")
-
         id = int.from_bytes(data[4:8], byteorder="little", signed=True)
         packet_type = int.from_bytes(data[8:12], byteorder="little")
-
-        body = data[12:end_body].decode("ascii")
-
-        # print(length, id, packet_type, body)
+        body = data[12:len(data) - 2].decode("ascii")
+        end_body = len(data) - 2
 
         return length, id, packet_type, body

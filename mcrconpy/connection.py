@@ -2,6 +2,14 @@
 """
 """
 
+from mcrconpy.packet import Packet
+
+from mcrconpy.exceptions import (
+    ServerTimeOut,
+    ServerError,
+    SocketConnectionError,
+)
+
 import socket
 
 
@@ -13,7 +21,7 @@ class Connection:
         """
         Set up the socket for connection.
         """
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = None
 
     def is_connected(
         self,
@@ -24,7 +32,7 @@ class Connection:
         try:
             self.send(b'')
             return True
-        except socket.error as e:
+        except Exception as e:
             return False
 
     def connect(
@@ -39,12 +47,18 @@ class Connection:
             address: str, address of the server.
             port: int, port used by the server.
         """
-        self.socket.connect((address, port))
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self.socket.connect((address, port))
+        except socket.timeout as e:
+            raise ServerTimeOut()
+        except socket.error as e:
+            raise ServerError(e)
 
     def send(
         self,
         data: bytes
-    ) -> bytes:
+    ) -> int:
         """
         Sends data to the server.
 
@@ -55,12 +69,18 @@ class Connection:
             bytes: response from the server.
         """
         if self.socket is not None:
-            rawdata = self.socket.send(data)
-            return rawdata
+            try:
+                bytes_sent = self.socket.send(data)
+                return bytes_sent
+            except Exception as e:
+                raise SocketConnectionError(e)
+        else:
+            raise SocketConnectionError("Socket is not connected.")
+
 
     def read(
         self,
-        length: int = 1024
+        length: int = 4
     ) -> bytes:
         """
         Reads data from the server.
@@ -71,13 +91,31 @@ class Connection:
         Returns
             bytes: data from the server.
         """
-        data = b''
-        while True:
-            response = self.socket.recv(length)
-            data += response
-            if response[-1] == 0:
-                break
-        return data
+        def _read(length: int) -> bytes:
+            """
+            """
+            data_ = b''
+            while len(data_) < length:
+                res = self.socket.recv(length - len(data_))
+                if not res:
+                    break
+                data_ += res
+            return data_
+
+        try:
+            full_packet = b''
+            # recv bytes packet length
+            length_packet = _read(length=4)
+            full_packet += length_packet
+
+            # recv rest of packet using packet length
+            data = _read(Packet.decode(data=length_packet)[0])
+            full_packet += data
+
+            return full_packet
+        except Exception as e:
+            # print(e)
+            raise SocketConnectionError(e)
 
     def close(
         self,

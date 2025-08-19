@@ -86,6 +86,7 @@ class User:
     def close_session(self) -> None:
         """
         """
+        self.is_login = False
         self.end_session = get_timestamp()
         self.time_session()
 

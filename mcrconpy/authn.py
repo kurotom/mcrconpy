@@ -59,12 +59,17 @@ class AuthN:
 
         self.socket.send(data=packet)
 
+
+        # res = self.socket.read(4)
+        # x = self.socket.read(int.from_bytes(res, byteorder="little"))
+        # print(Packet.decode(data=x))
+
         res = self.socket.read()
 
         auth_response = Packet.decode(data=res)
         length, id, packet_type, body = auth_response
 
-        # print(res, length, id, packet_type, body)
+        # print("X", res, length, id, packet_type, body)
 
         if id == -1:
             raise ServerAuthError()
